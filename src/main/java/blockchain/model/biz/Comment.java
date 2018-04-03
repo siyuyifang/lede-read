@@ -3,16 +3,16 @@ package blockchain.model.biz;
 import java.io.Serializable;
 
 /**
- * @author  bjyiguoqiang on 2018/3/30.
- *
- * 文章评论记录
+ * @author bjyiguoqiang on 2018/3/30.
+ *         <p>
+ *         文章评论记录
  */
-public class Comment implements Serializable{
+public class Comment implements Serializable {
 
     /**
      * 评论ID
      */
-    private String CommentId;
+    private String commentId;
 
     /**
      * 文章ID
@@ -40,11 +40,11 @@ public class Comment implements Serializable{
     private Long ctime;
 
     public String getCommentId() {
-        return CommentId;
+        return commentId;
     }
 
     public void setCommentId(String commentId) {
-        CommentId = commentId;
+        this.commentId = commentId;
     }
 
     public String getArticleId() {

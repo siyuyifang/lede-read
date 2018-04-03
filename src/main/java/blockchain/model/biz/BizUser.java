@@ -3,11 +3,11 @@ package blockchain.model.biz;
 import java.io.Serializable;
 
 /**
- * @author  bjyiguoqiang on 2018/3/30.
- * 
- * 业务用户信息
+ * @author bjyiguoqiang on 2018/3/30.
+ *         <p>
+ *         业务用户信息
  */
-public class BizUser implements Serializable{
+public class BizUser implements Serializable {
 
     /**
      * 手机号
