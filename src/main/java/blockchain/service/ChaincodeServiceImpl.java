@@ -102,7 +102,7 @@ public class ChaincodeServiceImpl implements ChaincodeService {
     /**
      * takes input as chaincode name and returns chaincode id
      *
-     * @param chaincodename
+     * @param name
      * @return ChaincodeID
      */
     public ChaincodeID getChaincodeId(String name) {
@@ -797,7 +797,7 @@ public class ChaincodeServiceImpl implements ChaincodeService {
 
             /// Send transaction proposal to all peers
             logger.debug("chaincodeFunction" + chaincodeFunction);
-            logger.debug("chaincodeArgs" + chaincodeArgs[0] + chaincodeArgs[1] + chaincodeArgs[2]);
+            logger.debug("chaincodeArgs, {}", JsonUtil.toJson(chaincodeArgs));
             TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
             transactionProposalRequest.setChaincodeID(chaincodeID);
             transactionProposalRequest.setFcn(chaincodeFunction);
@@ -811,7 +811,7 @@ public class ChaincodeServiceImpl implements ChaincodeService {
 
             transactionProposalRequest.setTransientMap(tm2);
 
-            logger.info("sending transactionProposal to all peers with arguments: move(a,b,100)");
+            logger.info("sending transactionProposal to all peers with arguments");
 
             Collection<ProposalResponse> transactionPropResp = channel
                     .sendTransactionProposal(transactionProposalRequest, channel.getPeers());
@@ -855,7 +855,7 @@ public class ChaincodeServiceImpl implements ChaincodeService {
 
             ////////////////////////////
             // Send Transaction Transaction to orderer
-            logger.info("Sending chaincode transaction(move a,b,100) to orderer.");
+            logger.info("Sending chaincode transaction to orderer.");
             channel.sendTransaction(successful).thenApply(transactionEvent -> {
 
                 waitOnFabric(0);
@@ -880,8 +880,7 @@ public class ChaincodeServiceImpl implements ChaincodeService {
                 return result;
             }).get(Conf.getTransactionWaitTime(), TimeUnit.SECONDS);
         } catch (Exception e) {
-            logger.info("Caught an exception while invoking chaincode");
-            logger.error("ChaincodeServiceImpl | invokeChaincode | " + e.getMessage());
+            logger.error("ChaincodeServiceImpl | invokeChaincode | ", e);
             result.put("code", 5001);
             result.put("msg", "Caught an exception while invoking chaincode");
             return result;

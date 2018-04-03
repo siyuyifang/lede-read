@@ -5,7 +5,9 @@ import blockchain.service.biz.EnrollUserService;
 import blockchain.util.DateUtil;
 import blockchain.util.R;
 import org.apache.http.HttpStatus;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
@@ -17,6 +19,7 @@ import java.util.Map;
  *         <p>
  *         注册登记及报名相关接口
  */
+@RequestMapping("/api/period")
 @RestController
 public class EnrollController extends BaseController {
 
@@ -28,6 +31,7 @@ public class EnrollController extends BaseController {
      *
      * @return
      */
+    @PostMapping("/enroll")
     public R enrollByPeriod(@RequestHeader String authorization) {
         logger.info("[authorization] {}", authorization);
         if (invalidToken()) {
@@ -44,6 +48,7 @@ public class EnrollController extends BaseController {
      *
      * @return
      */
+    @PostMapping("/enroll/list")
     public R enrollListByPeriod(@RequestHeader String authorization) {
         logger.info("[authorization] {}", authorization);
         if (invalidToken()) {

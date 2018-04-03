@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"fabric/core/chaincode/shim"
+	"github.com/hyperledger/fabric/core/chaincode/shim"
 	pb "github.com/hyperledger/fabric/protos/peer"
 )
 
@@ -52,23 +52,49 @@ func (t *ReadChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 func (t *ReadChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	fmt.Println("ReadChaincode Invoke")
 	function, args := stub.GetFunctionAndParameters()
-	if function == "enrollByPeriod" {
+
+	if function != "invoke" {
+		return shim.Error("Unknown function call")
+	}
+
+	if len(args) < 2 {
+		return shim.Error("Incorrect number of arguments. Expecting at least 2")
+	}
+
+	if args[0] == "enrollByPeriod" {
+		// Deletes an entity from its state
 		return t.enrollByPeriod(stub, args)
-	} else if function == "enrollListByPeriod" {
+	}
+
+	if args[0] == "enrollListByPeriod" {
 		return t.enrollListByPeriod(stub, args)
-	} else if function == "insertArticle" {
+	}
+
+	if args[0] == "insertArticle" {
 		return t.insertArticle(stub, args)
-	} else if function == "updateArticle" {
+	}
+
+	if args[0] == "updateArticle" {
 		return t.updateArticle(stub, args)
-	} else if function == "queryMyArticleByPeriod" {
+	}
+
+	if args[0] == "queryMyArticleByPeriod" {
 		return t.queryMyArticleByPeriod(stub, args)
-	} else if function == "listArticleByPeriod" {
+	}
+
+	if args[0] == "listArticleByPeriod" {
 		return t.listArticleByPeriod(stub, args)
-	} else if function == "commentByArticleId" {
+	}
+
+	if args[0] == "commentByArticleId" {
 		return t.commentByArticleId(stub, args)
-	} else if function == "listCommentByArticleId" {
+	}
+
+	if args[0] == "listCommentByArticleId" {
 		return t.listCommentByArticleId(stub, args)
-	} else if function == "getCommentCountByUserId" {
+	}
+
+	if args[0] == "getCommentCountByUserId" {
 		return t.getCommentCountByUserId(stub, args)
 	}
 	return shim.Error("Invalid invoke function name. " + function)
@@ -76,7 +102,7 @@ func (t *ReadChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 // 当前登录用户提交本期报名，注意检查本期是否已报名
 func (t *ReadChaincode) enrollByPeriod(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	jsonStr := args[0]
+	jsonStr := args[1]
 	fmt.Println(jsonStr)
 	return shim.Success([]byte(jsonStr))
 }

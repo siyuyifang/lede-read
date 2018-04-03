@@ -1,6 +1,6 @@
 package blockchain.service.biz.impl;
 
-import blockchain.Constants;
+import blockchain.constant.Constants;
 import blockchain.filter.JwtFilter;
 import blockchain.model.biz.BizUser;
 import blockchain.model.biz.EnrollUser;
@@ -63,7 +63,7 @@ public class EnrollUserServiceImpl implements EnrollUserService {
         args[1] = JsonUtil.toJson(enrollUser);
 
         logger.info("[enrollUser] {} ", args[1]);
-        Map<String, Object> dataMap = chaincodeService.invokeBizChaincode(Constants.BIZ_CHANNEL, Constants.INVOKE, args);
+        Map<String, Object> dataMap = chaincodeService.invokeBizChaincode(Constants.BIZ_CHAINCODE, Constants.INVOKE, args);
         return R.ok(dataMap);
     }
 
