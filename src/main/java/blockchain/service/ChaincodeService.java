@@ -46,6 +46,8 @@ public interface ChaincodeService {
 
     Map<String, Object> invokeBizChaincode(String name, String chaincodeFunction, String[] chaincodeArgs);
 
+    Map<String, Object> queryBizChaincode(String name, String chaincodeFunction, String[] chaincodeArgs);
+
     void blockchainInfo(Org sampleOrg, Channel channel);
 
 }

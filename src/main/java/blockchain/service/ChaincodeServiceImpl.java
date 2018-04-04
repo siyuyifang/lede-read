@@ -13,8 +13,10 @@
  */
 package blockchain.service;
 
+import blockchain.constant.Rcode;
 import blockchain.model.*;
 import blockchain.util.JsonUtil;
+import blockchain.util.R;
 import com.google.common.collect.Maps;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.http.HttpStatus;
@@ -147,7 +149,7 @@ public class ChaincodeServiceImpl implements ChaincodeService {
      * For loading user from persistence,if user already exists by taking as
      * input username
      *
-     * @param username
+     * @param name
      * @return status as string
      */
 
@@ -698,7 +700,7 @@ public class ChaincodeServiceImpl implements ChaincodeService {
 
             chaincodeID = getChaincodeId(name);
             Channel channel = reconstructChannel();
-            logger.debug("Now query chaincode for the value of b.");
+            logger.debug("Now query chaincode for the value. chaincodeArgs = {} ", JsonUtil.toJson(chaincodeArgs));
             logger.debug(chaincodeFunction);
             QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
 
@@ -715,7 +717,6 @@ public class ChaincodeServiceImpl implements ChaincodeService {
 
             Collection<ProposalResponse> queryProposals = channel.queryByChaincode(queryByChaincodeRequest,
                     channel.getPeers());
-
 
             for (ProposalResponse proposalResponse : queryProposals) {
                 if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ProposalResponse.Status.SUCCESS) {
@@ -790,7 +791,7 @@ public class ChaincodeServiceImpl implements ChaincodeService {
             checkConfig();
 
             chaincodeID = getChaincodeId(chaincodename);
-            Org sampleOrg = Conf.getSampleOrg("peerOrg1");
+            //Org sampleOrg = Conf.getSampleOrg("peerOrg1");
             Channel channel = reconstructChannel();
             successful.clear();
             failed.clear();
@@ -807,8 +808,8 @@ public class ChaincodeServiceImpl implements ChaincodeService {
             Map<String, byte[]> tm2 = new HashMap<>();
             tm2.put("HyperLedgerFabric", "TransactionProposalRequest:JavaSDK".getBytes(UTF_8));
             tm2.put("method", "TransactionProposalRequest".getBytes(UTF_8));
-            tm2.put("result", ":)".getBytes(UTF_8)); /// This should be returned
-
+            // This should be returned
+            tm2.put("result", ":)".getBytes(UTF_8));
             transactionProposalRequest.setTransientMap(tm2);
 
             logger.info("sending transactionProposal to all peers with arguments");
@@ -817,7 +818,7 @@ public class ChaincodeServiceImpl implements ChaincodeService {
                     .sendTransactionProposal(transactionProposalRequest, channel.getPeers());
             for (ProposalResponse response : transactionPropResp) {
                 if (response.getStatus() == ProposalResponse.Status.SUCCESS) {
-                    logger.info("Successful transaction proposal response Txid: %s from peer %s",
+                    logger.info("Successful transaction proposal response Txid: {} from peer {}",
                             response.getTransactionID(), response.getPeer().getName());
                     successful.add(response);
                 } else {
@@ -827,40 +828,49 @@ public class ChaincodeServiceImpl implements ChaincodeService {
             Collection<Set<ProposalResponse>> proposalConsistencySets = SDKUtils
                     .getProposalConsistencySets(transactionPropResp);
             if (proposalConsistencySets.size() != 1) {
-                logger.info(format("Expected only one set of consistent proposal responses but got %d",
+                logger.info(format("Expected only one set of consistent proposal responses but got {}",
                         proposalConsistencySets.size()));
             }
 
-            logger.info("Received %d transaction proposal responses. Successful+verified: %d . Failed: %d",
+            logger.info("Received %d transaction proposal responses. Successful+verified: {} . Failed: {}",
                     transactionPropResp.size(), successful.size(), failed.size());
             if (failed.size() > 0) {
                 ProposalResponse firstTransactionProposalResponse = failed.iterator().next();
-                logger.info("Not enough endorsers for invoke(move a,b,100):" + failed.size() + " endorser error: "
+                logger.info("Not enough endorsers for invoke:" + failed.size() + " endorser error: "
                         + firstTransactionProposalResponse.getMessage() + ". Was verified: "
                         + firstTransactionProposalResponse.isVerified());
             }
             logger.info("Successfully received transaction proposal responses.");
             ProposalResponse resp = transactionPropResp.iterator().next();
             logger.debug("getChaincodeActionResponseReadWriteSetInfo:::" + resp.getChaincodeActionResponseReadWriteSetInfo());
-            byte[] x = resp.getChaincodeActionResponsePayload();
-            String resultAsString = null;
-            if (x != null) {
-                resultAsString = new String(x, "UTF-8");
-                // 根据返回值确认是否已成功执行。code非200则直接返回
-                Map<String, Object> resultMap = JsonUtil.parseJSON2Map(resultAsString);
-                if (resultMap != null && !"200".equals(String.valueOf(resultMap.get("code")))) {
-                    return resultMap;
-                }
+
+            //根据返回状态码判断是否正常完成
+            int status = resp.getChaincodeActionResponseStatus();
+            if (status != 200) {
+                logger.info("response status = {}, message = {}", status, resp.getMessage());
+                return R.error(status, resp.getMessage());
             }
 
-            ////////////////////////////
-            // Send Transaction Transaction to orderer
+//            byte[] x = resp.getChaincodeActionResponsePayload();
+//            String resultAsString;
+//            if (x != null) {
+//                resultAsString = new String(x, "UTF-8");
+//                // 根据返回值确认是否已成功执行。code非200则直接返回
+//                Map<String, Object> resultMap = JsonUtil.parseJSON2Map(resultAsString);
+//                if (resultMap != null && !"200".equals(String.valueOf(resultMap.get("code")))) {
+//                    return resultMap;
+//                }
+//            }
+
+            /**
+             * Send Transaction Transaction to orderer
+             */
             logger.info("Sending chaincode transaction to orderer.");
             channel.sendTransaction(successful).thenApply(transactionEvent -> {
 
                 waitOnFabric(0);
                 logger.info("transaction event is valid", transactionEvent.isValid());
-                logger.info("Finished invoke transaction with transaction id %s", transactionEvent.getTransactionID());
+                logger.info("Finished invoke transaction with transaction id {}", transactionEvent.getTransactionID());
 
                 result.put("code", HttpStatus.SC_OK);
                 result.put("msg", "Chaincode invoked successfully " + transactionEvent.getTransactionID());
@@ -869,19 +879,19 @@ public class ChaincodeServiceImpl implements ChaincodeService {
                 if (e instanceof TransactionEventException) {
                     BlockEvent.TransactionEvent te = ((TransactionEventException) e).getTransactionEvent();
                     if (te != null) {
-                        fail(format("Transaction with txid %s failed. %s", te.getTransactionID(), e.getMessage()));
-                        logger.info("Transaction with txid %s failed. %s", te.getTransactionID(), e.getMessage());
+                        fail(format("Transaction with txid {} failed. {}", te.getTransactionID(), e.getMessage()));
+                        logger.info("Transaction with txid {} failed. {}", te.getTransactionID(), e.getMessage());
                     }
                 }
 
-                logger.info("failed with %s exception %s", e.getClass().getName(), e.getMessage());
-                result.put("code", 4001);
-                result.put("msg", "Error");
+                logger.info("failed with {} exception {}", e.getClass().getName(), e.getMessage());
+                result.put("code", Rcode.BIZ_FAILED.getCode());
+                result.put("msg", Rcode.BIZ_FAILED.getMsg());
                 return result;
             }).get(Conf.getTransactionWaitTime(), TimeUnit.SECONDS);
         } catch (Exception e) {
             logger.error("ChaincodeServiceImpl | invokeChaincode | ", e);
-            result.put("code", 5001);
+            result.put("code", Rcode.BIZ_ERROR.getCode());
             result.put("msg", "Caught an exception while invoking chaincode");
             return result;
 
@@ -891,4 +901,56 @@ public class ChaincodeServiceImpl implements ChaincodeService {
         return result;
     }
 
+
+    /**
+     * queries the chaincode takes input chaincode name, function and args
+     * returns payload from blockchain as string
+     */
+    @Override
+    public Map<String, Object> queryBizChaincode(String name, String chaincodeFunction, String[] chaincodeArgs) {
+        try {
+            checkConfig();
+
+            chaincodeID = getChaincodeId(name);
+            Channel channel = reconstructChannel();
+            logger.debug("Now query chaincode for the value. chaincodeArgs = {} ", JsonUtil.toJson(chaincodeArgs));
+            QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
+
+            queryByChaincodeRequest.setArgs(chaincodeArgs);
+            queryByChaincodeRequest.setFcn(chaincodeFunction);
+            queryByChaincodeRequest.setChaincodeID(chaincodeID);
+
+            Map<String, byte[]> tm2 = new HashMap<>();
+            tm2.put("HyperLedgerFabric", "QueryByChaincodeRequest:JavaSDK".getBytes(UTF_8));
+            tm2.put("method", "QueryByChaincodeRequest".getBytes(UTF_8));
+            queryByChaincodeRequest.setTransientMap(tm2);
+
+            Collection<ProposalResponse> queryProposals = channel.queryByChaincode(queryByChaincodeRequest,
+                    channel.getPeers());
+
+            for (ProposalResponse proposalResponse : queryProposals) {
+                if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ProposalResponse.Status.SUCCESS) {
+                    logger.info("Failed query proposal from peer {}, | status: {}, | message:{}, | Was verified: {}", proposalResponse.getPeer().getName(),
+                            proposalResponse.getStatus(), proposalResponse.getMessage(), proposalResponse.isVerified());
+                } else {
+
+                    int status = proposalResponse.getChaincodeActionResponseStatus();
+                    String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
+
+                    logger.info("proposalResponse status = {} , payload = {}", status, payload);
+                    if (status == HttpStatus.SC_OK) {
+                        return R.ok().put("data", payload);
+                    } else {
+                        return R.error(status, payload);
+                    }
+                }
+
+            }
+
+        } catch (Exception e) {
+            logger.error("ChaincodeServiceImpl | queryBizChaincode | {}", e.getMessage());
+        }
+
+        return R.error(Rcode.BIZ_FAILED.getCode(), Rcode.BIZ_FAILED.getMsg());
+    }
 }

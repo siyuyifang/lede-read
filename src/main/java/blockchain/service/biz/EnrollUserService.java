@@ -1,8 +1,5 @@
 package blockchain.service.biz;
 
-import blockchain.model.biz.EnrollUser;
-
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -26,5 +23,5 @@ public interface EnrollUserService {
      * @param period 查询期数 如 201804
      * @return 已报名用户列表
      */
-    List<EnrollUser> enrollListByPeriod(String period);
+    Map<String, Object> enrollListByPeriod(String period);
 }

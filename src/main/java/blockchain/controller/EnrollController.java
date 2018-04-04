@@ -32,14 +32,14 @@ public class EnrollController extends BaseController {
      * @return
      */
     @PostMapping("/enroll")
-    public R enrollByPeriod(@RequestHeader String authorization) {
+    public Map<String, Object> enrollByPeriod(@RequestHeader String authorization) {
         logger.info("[authorization] {}", authorization);
         if (invalidToken()) {
             return R.error(HttpStatus.SC_FORBIDDEN, "invalid token");
         }
         String period = DateUtil.getCurrentPeriod();
         Map<String, Object> result = enrollUserService.enrollByPeriod(period);
-        return R.ok(result);
+        return result;
 
     }
 
@@ -49,14 +49,14 @@ public class EnrollController extends BaseController {
      * @return
      */
     @PostMapping("/enroll/list")
-    public R enrollListByPeriod(@RequestHeader String authorization) {
+    public Map<String, Object> enrollListByPeriod(@RequestHeader String authorization) {
         logger.info("[authorization] {}", authorization);
         if (invalidToken()) {
             return R.error(HttpStatus.SC_FORBIDDEN, "invalid token");
         }
         String period = DateUtil.getCurrentPeriod();
-        List<EnrollUser> result = enrollUserService.enrollListByPeriod(period);
-        return R.ok().put("data", result);
+        Map<String, Object> result = enrollUserService.enrollListByPeriod(period);
+        return result;
 
     }
 }
